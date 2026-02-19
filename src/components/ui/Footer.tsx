@@ -31,15 +31,15 @@ export const Footer = () => {
         </div>
 
         {/* Navigation */}
-        <div className="flex flex-wrap justify-center gap-8 md:gap-12">
+        <div className="flex flex-wrap justify-center gap-4 md:gap-8">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.label}
               href={link.href}
-              className="text-sm font-medium text-white/60 hover:text-white hover:text-shadow-glow transition-all duration-300 relative group"
+              className="text-sm font-medium text-white/60 hover:text-white hover:text-shadow-glow transition-all duration-300 relative group min-h-[44px] flex items-center px-2"
             >
               {link.label}
-              <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-primary-start transition-all duration-300 group-hover:w-full" />
+              <span className="absolute bottom-2 left-0 w-0 h-[1px] bg-primary-start transition-all duration-300 group-hover:w-full" />
             </Link>
           ))}
         </div>

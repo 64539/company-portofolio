@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Lock, Mail, Trash2, CheckCircle, MessageCircle, RefreshCw, LogOut, ArrowRight, ChevronRight, ArrowLeft, Send } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -32,6 +32,21 @@ const SNIPPETS = [
   "Kami siap membantu inisialisasi proyek Anda."
 ];
 
+// Min 44x44px Touch Target Helper
+const IconButton = ({ onClick, children, className, disabled = false, title }: any) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    title={title}
+    className={cn(
+      "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-start/50",
+      className
+    )}
+  >
+    {children}
+  </button>
+);
+
 export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
@@ -45,6 +60,24 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
   const [replyContent, setReplyContent] = useState("");
   const [sendingReply, setSendingReply] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+
+  // Auto-save logic
+  useEffect(() => {
+    if (selectedMessage) {
+      const savedDraft = localStorage.getItem(`draft_reply_${selectedMessage.id}`);
+      if (savedDraft) {
+        setReplyContent(savedDraft);
+      } else {
+        setReplyContent("");
+      }
+    }
+  }, [selectedMessage]);
+
+  useEffect(() => {
+    if (selectedMessage) {
+      localStorage.setItem(`draft_reply_${selectedMessage.id}`, replyContent);
+    }
+  }, [replyContent, selectedMessage]);
 
   // Check session storage on mount
   useEffect(() => {
@@ -161,6 +194,9 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
   const sendReply = async () => {
     if (!selectedMessage || !replyContent) return;
     
+    // Client-side Sanitization (Basic)
+    const sanitizedContent = replyContent.replace(/<[^>]*>/g, ''); // Strip HTML tags
+    
     setSendingReply(true);
     const token = sessionStorage.getItem("adminToken");
 
@@ -175,7 +211,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
           messageId: selectedMessage.id,
           userEmail: selectedMessage.email,
           userName: selectedMessage.name,
-          replyContent,
+          replyContent: sanitizedContent,
           subject: selectedMessage.subject
         })
       });
@@ -185,9 +221,12 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
       if (res.ok) {
         // Update local state
         setMessages(prev => prev.map(m => 
-          m.id === selectedMessage.id ? { ...m, status: 'replied', adminReply: replyContent } : m
+          m.id === selectedMessage.id ? { ...m, status: 'replied', adminReply: sanitizedContent } : m
         ));
-        setSelectedMessage(prev => prev ? { ...prev, status: 'replied', adminReply: replyContent } : null);
+        setSelectedMessage(prev => prev ? { ...prev, status: 'replied', adminReply: sanitizedContent } : null);
+        
+        // Clear draft
+        localStorage.removeItem(`draft_reply_${selectedMessage.id}`);
         setReplyContent("");
         setPreviewMode(false);
         alert("Reply sent successfully!");
@@ -201,6 +240,14 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
       setSendingReply(false);
     }
   };
+
+  const MessageListSkeleton = () => (
+    <div className="space-y-3 p-2 animate-pulse">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-24 bg-white/5 rounded-lg border border-white/5" />
+      ))}
+    </div>
+  );
 
   if (!isOpen) return null;
 
@@ -229,29 +276,32 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                   Admin <span className="text-primary-start">Gate</span>
                 </h2>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
                 {isAuthenticated && (
                   <>
-                    <button 
+                    <IconButton 
                       onClick={() => fetchMessages(sessionStorage.getItem("adminToken") || "")}
-                      className={cn("p-2 hover:bg-white/10 rounded-full transition-colors", refreshing && "animate-spin")}
+                      className={cn("hover:bg-white/10 text-white", refreshing && "animate-spin")}
+                      title="Refresh"
                     >
-                      <RefreshCw size={18} />
-                    </button>
-                    <button 
+                      <RefreshCw size={20} />
+                    </IconButton>
+                    <IconButton 
                       onClick={handleLogout}
-                      className="p-2 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-full transition-colors"
+                      className="hover:bg-red-500/20 text-red-400 hover:text-red-300"
+                      title="Logout"
                     >
-                      <LogOut size={18} />
-                    </button>
+                      <LogOut size={20} />
+                    </IconButton>
                   </>
                 )}
-                <button 
+                <IconButton 
                   onClick={onClose}
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                  className="hover:bg-white/10 text-white"
+                  title="Close"
                 >
-                  <X size={20} />
-                </button>
+                  <X size={24} />
+                </IconButton>
               </div>
             </div>
 
@@ -275,7 +325,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                    <button
                      type="submit"
                      disabled={loading}
-                     className="w-full py-3 bg-white text-black font-bold uppercase tracking-widest rounded-xl hover:bg-primary-start hover:text-white transition-all disabled:opacity-50"
+                     className="w-full min-h-[44px] py-3 bg-white text-black font-bold uppercase tracking-widest rounded-xl hover:bg-primary-start hover:text-white transition-all disabled:opacity-50"
                    >
                      {loading ? "Decrypting..." : "Unlock"}
                    </button>
@@ -293,8 +343,10 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                   <div className="p-4 border-b border-white/5">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-white/50">Inbox ({messages.length})</h3>
                   </div>
-                  <div className="overflow-y-auto flex-1 p-2 space-y-2">
-                    {messages.length === 0 ? (
+                  <div className="overflow-y-auto flex-1 p-2 space-y-2 overscroll-contain">
+                    {refreshing && messages.length === 0 ? (
+                      <MessageListSkeleton />
+                    ) : messages.length === 0 ? (
                       <div className="text-center py-20 text-white/30 text-sm">No messages yet.</div>
                     ) : (
                       messages.map((msg) => (
@@ -302,11 +354,10 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                           key={msg.id}
                           onClick={() => {
                              setSelectedMessage(msg);
-                             setReplyContent("");
                              setPreviewMode(false);
                           }}
                           className={cn(
-                            "p-4 rounded-lg cursor-pointer border transition-all hover:bg-white/5",
+                            "p-4 rounded-lg cursor-pointer border transition-all hover:bg-white/5 min-h-[80px]",
                             selectedMessage?.id === msg.id ? "bg-white/10 border-primary-start/30" : "bg-transparent border-transparent",
                             msg.status === 'unread' && "border-l-2 border-l-primary-start bg-primary-start/5"
                           )}
@@ -345,12 +396,12 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                   {selectedMessage ? (
                     <>
                       {/* Detail Header */}
-                      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02] shrink-0">
                         <button 
                           onClick={() => setSelectedMessage(null)}
-                          className="lg:hidden flex items-center gap-2 text-white/50 hover:text-white text-sm"
+                          className="lg:hidden flex items-center gap-2 text-white/50 hover:text-white text-sm min-h-[44px] px-2"
                         >
-                          <ArrowLeft size={16} /> Back
+                          <ArrowLeft size={20} /> Back
                         </button>
                         <div className="flex gap-2 ml-auto">
                            {selectedMessage.whatsapp && (
@@ -358,30 +409,30 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                                href={`https://wa.me/${selectedMessage.whatsapp.replace(/\D/g, '')}`}
                                target="_blank"
                                rel="noopener noreferrer"
-                               className="p-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors"
+                               className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors"
                                title="Chat WhatsApp"
                              >
-                               <MessageCircle size={18} />
+                               <MessageCircle size={20} />
                              </a>
                            )}
-                           <button 
+                           <IconButton 
                               onClick={() => deleteMessage(selectedMessage.id)}
-                              className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
+                              className="bg-red-500/10 hover:bg-red-500/20 text-red-400"
                               title="Delete"
                            >
-                             <Trash2 size={18} />
-                           </button>
-                           <button 
+                             <Trash2 size={20} />
+                           </IconButton>
+                           <IconButton 
                               onClick={() => updateStatus(selectedMessage.id, 'done')}
-                              className="p-2 bg-white/5 hover:bg-green-500/20 hover:text-green-400 text-white/60 rounded-lg transition-colors"
+                              className="bg-white/5 hover:bg-green-500/20 hover:text-green-400 text-white/60"
                               title="Mark as Done"
                            >
-                             <CheckCircle size={18} />
-                           </button>
+                             <CheckCircle size={20} />
+                           </IconButton>
                         </div>
                       </div>
 
-                      <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+                      <div className="flex-1 overflow-y-auto p-6 lg:p-8 overscroll-contain">
                         {/* Message Info */}
                         <div className="mb-8">
                            <h2 className="text-2xl font-bold text-white mb-2">{selectedMessage.subject}</h2>
@@ -396,13 +447,13 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                              <div>{new Date(selectedMessage.createdAt).toLocaleString()}</div>
                            </div>
                            
-                           <div className="bg-white/5 p-6 rounded-xl border border-white/5 text-white/80 leading-relaxed whitespace-pre-wrap">
+                           <div className="bg-white/5 p-6 rounded-xl border border-white/5 text-white/80 leading-relaxed whitespace-pre-wrap select-text">
                              {selectedMessage.message}
                            </div>
                         </div>
 
                         {/* Reply Section */}
-                        <div className="border-t border-white/10 pt-6">
+                        <div className="border-t border-white/10 pt-6 pb-20 lg:pb-0">
                            <h3 className="text-sm font-bold uppercase tracking-widest text-primary-start mb-4">Reply to {selectedMessage.name}</h3>
                            
                            {/* Quick Snippets */}
@@ -411,7 +462,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                                <button
                                  key={i}
                                  onClick={() => setReplyContent(prev => prev + snippet + "\n")}
-                                 className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 text-[10px] text-white/60 hover:text-white transition-colors cursor-pointer"
+                                 className="px-3 py-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-white/60 hover:text-white transition-colors cursor-pointer min-h-[32px]"
                                >
                                  + {snippet.slice(0, 20)}...
                                </button>
@@ -431,18 +482,26 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                                </div>
                              </div>
                            ) : (
-                             <textarea
-                               value={replyContent}
-                               onChange={(e) => setReplyContent(e.target.value)}
-                               placeholder="Type your reply here..."
-                               className="w-full h-64 bg-black/30 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/20 outline-none focus:border-primary-start/50 focus:ring-1 focus:ring-primary-start/20 transition-all resize-none font-mono text-sm mb-4"
-                             />
+                             <div className="relative">
+                               <textarea
+                                 value={replyContent}
+                                 onChange={(e) => setReplyContent(e.target.value)}
+                                 placeholder="Type your reply here..."
+                                 className="w-full h-64 bg-black/30 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/20 outline-none focus:border-primary-start/50 focus:ring-1 focus:ring-primary-start/20 transition-all resize-none font-mono text-sm mb-4"
+                               />
+                               <div className={cn(
+                                 "absolute bottom-6 right-4 text-xs font-mono",
+                                 replyContent.length > 5000 ? "text-red-500" : "text-white/30"
+                               )}>
+                                 {replyContent.length}/5000
+                               </div>
+                             </div>
                            )}
 
                            <div className="flex items-center justify-between">
                              <button
                                onClick={() => setPreviewMode(!previewMode)}
-                               className="text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+                               className="text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors min-h-[44px] px-2"
                              >
                                {previewMode ? "Edit Reply" : "Preview Email"}
                              </button>
@@ -451,8 +510,8 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                                {previewMode && (
                                  <button
                                    onClick={sendReply}
-                                   disabled={sendingReply || !replyContent.trim()}
-                                   className="px-6 py-2 bg-primary-start text-black font-bold uppercase tracking-widest rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                   disabled={sendingReply || !replyContent.trim() || replyContent.length > 5000 || replyContent.length < 10}
+                                   className="px-6 py-2 bg-primary-start text-black font-bold uppercase tracking-widest rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-h-[44px]"
                                  >
                                    {sendingReply ? (
                                      <>
@@ -469,7 +528,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                                  <button
                                    onClick={() => setPreviewMode(true)}
                                    disabled={!replyContent.trim()}
-                                   className="px-6 py-2 bg-white/10 text-white font-bold uppercase tracking-widest rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50"
+                                   className="px-6 py-2 bg-white/10 text-white font-bold uppercase tracking-widest rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 min-h-[44px]"
                                  >
                                    Review
                                  </button>

@@ -111,22 +111,18 @@ export const SERVICES = [
 
 export const LAB_PROJECTS = [
   {
-    title: "Web Jastip Process",
-    description: "End-to-end digital transformation of a procurement service. From discovery to deployment, we streamlined the Jastip workflow.",
-    category: "Case Study",
+    title: "Jastip Web (Product Alpha)",
+    description: "End-to-end digital transformation of a procurement service. Modernizing the workflow from discovery to deployment.",
+    category: "Product Alpha",
     size: "large",
-  },
-  {
-    title: "Neural UI Kits",
-    description: "AI-driven design systems that adapt to user behavior in real-time.",
-    category: "R&D",
-    size: "small",
-  },
-  {
-    title: "Scalable Architecture",
-    description: "Next-gen infrastructure patterns for high-traffic environments.",
-    category: "Architecture",
-    size: "small",
+    stack: ["Next.js 14", "Tailwind CSS", "Upstash Redis", "Resend API"],
+    team: [
+      { role: "CEO", name: "Ryuzacki" },
+      { role: "CTO", name: "Jabriel" },
+      { role: "CPO", name: "Rizqy" },
+      { role: "COS", name: "Aji" },
+    ],
+    progress: 67,
   },
 ];
 
