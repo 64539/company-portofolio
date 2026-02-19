@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #050505;
+  --color-foreground: #ffffff;
+  --color-primary-start: #00f2fe;
+  --color-primary-end: #7000ff;
+  
+  --font-sans: var(--font-geist-sans), Inter, ui-sans-serif, system-ui, sans-serif;
+  
+  --animate-accordion-down: accordion-down 0.2s ease-in-out;
+  --animate-accordion-up: accordion-up 0.2s ease-in-out;
+
+  /* φ-based custom properties */
+  --phi: 1.618;
+  --phi-small: 0.618;
+  --spacing-phi-unit: 1rem;
+}
+
+:root {
+  --background: #050505;
+  --foreground: #ffffff;
+  --phi: 1.618;
+  --phi-small: 0.618;
+}
+
+@layer base {
+  /* CSS Reset & Defaults */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
+    background-color: #050505;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-[-0.04em];
+  }
+
+  /* Reduce default motion if user prefers */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-linear-to-r from-[#00f2fe] to-[#7000ff] bg-clip-text text-transparent;
+  }
+  
+  .glass {
+    @apply bg-white/5 backdrop-blur-[24px] relative transition-all duration-300 ease-in-out;
+  }
+
+  .glass::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.1), transparent);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  .circuit-bg {
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10 H90 V90 H10 Z M20 20 V80 M80 20 V80 M20 50 H80' stroke='white' stroke-width='0.5' fill='none' opacity='0.05'/%3E%3C/svg%3E");
+  }
+
+  /* Structural Spacing Rules - 8px base unit multiplier */
+  .section-spacing {
+    /* Mobile: 80px (py-20), Desktop: 120px (py-30) */
+    @apply py-20 lg:py-32 px-6 lg:px-12;
+  }
+
+  .noise-overlay {
+    position: relative;
+  }
+
+  .noise-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: 0.02;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+
+  .phi-container {
+    @apply max-w-[1440px] mx-auto w-full px-0;
+  }
+
+  .phi-text-block {
+    @apply max-w-3xl mx-auto;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
