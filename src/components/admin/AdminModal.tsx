@@ -253,6 +253,24 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
 
   return (
     <AnimatePresence>
+      <style jsx global>{`
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(0, 242, 254, 0.3);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 242, 254, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+      `}</style>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -264,12 +282,12 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          className="w-full max-w-7xl h-[90vh] overflow-hidden relative"
+          className="w-full max-w-7xl max-h-[95vh] flex flex-col relative"
           onClick={(e) => e.stopPropagation()}
         >
-          <GlassCard className="h-full flex flex-col border-primary-start/20 shadow-[0_0_50px_rgba(0,242,254,0.1)] bg-[#050505]/95">
-            {/* Header */}
-            <div className="p-4 lg:p-6 border-b border-white/10 flex items-center justify-between bg-white/5 shrink-0">
+          <GlassCard className="flex flex-col h-full border-primary-start/20 shadow-[0_0_50px_rgba(0,242,254,0.1)] bg-[#050505]/95 overflow-hidden">
+            {/* Header - Sticky */}
+            <div className="p-4 lg:p-6 border-b border-white/10 flex items-center justify-between bg-white/5 shrink-0 sticky top-0 z-50">
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 rounded-full bg-primary-start animate-pulse" />
                 <h2 className="text-xl font-bold tracking-widest uppercase">
@@ -308,7 +326,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
             {/* Content Area */}
             {!isAuthenticated ? (
                // Login Form
-               <div className="flex flex-col items-center justify-center h-full">
+               <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
                  <Lock size={48} className="text-white/20 mb-8" />
                  <form onSubmit={handleLogin} className="w-full max-w-sm space-y-6">
                    <div>
@@ -333,58 +351,61 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                </div>
             ) : (
               // Authenticated View - Split Pane
-              <div className="flex h-full overflow-hidden relative">
+              <div className="flex-1 overflow-y-auto flex relative">
                 
                 {/* Left Pane: Message List */}
                 <div className={cn(
                   "w-full lg:w-1/3 border-r border-white/5 flex flex-col transition-transform duration-300 absolute lg:relative z-10 bg-[#050505] lg:bg-transparent h-full",
                   selectedMessage ? "-translate-x-full lg:translate-x-0" : "translate-x-0"
                 )}>
-                  <div className="p-4 border-b border-white/5">
+                  <div className="p-4 border-b border-white/5 shrink-0">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-white/50">Inbox ({messages.length})</h3>
                   </div>
-                  <div className="overflow-y-auto flex-1 p-2 space-y-2 overscroll-contain">
-                    {refreshing && messages.length === 0 ? (
-                      <MessageListSkeleton />
-                    ) : messages.length === 0 ? (
-                      <div className="text-center py-20 text-white/30 text-sm">No messages yet.</div>
-                    ) : (
-                      messages.map((msg) => (
-                        <div 
-                          key={msg.id}
-                          onClick={() => {
-                             setSelectedMessage(msg);
-                             setPreviewMode(false);
-                          }}
-                          className={cn(
-                            "p-4 rounded-lg cursor-pointer border transition-all hover:bg-white/5 min-h-[80px]",
-                            selectedMessage?.id === msg.id ? "bg-white/10 border-primary-start/30" : "bg-transparent border-transparent",
-                            msg.status === 'unread' && "border-l-2 border-l-primary-start bg-primary-start/5"
-                          )}
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className={cn("font-bold text-sm truncate pr-2", msg.status === 'unread' ? "text-white" : "text-white/70")}>
-                              {msg.name}
-                            </h4>
-                            <span className="text-[10px] text-white/30 whitespace-nowrap">
-                              {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
-                            </span>
+                  {/* Inbox Sidebar Wrapper */}
+                  <div className="flex-1 overflow-y-auto custom-scrollbar pb-4 max-h-[calc(100vh-200px)]">
+                    <div className="p-2 space-y-2">
+                      {refreshing && messages.length === 0 ? (
+                        <MessageListSkeleton />
+                      ) : messages.length === 0 ? (
+                        <div className="text-center py-20 text-white/30 text-sm">No messages yet.</div>
+                      ) : (
+                        messages.map((msg) => (
+                          <div 
+                            key={msg.id}
+                            onClick={() => {
+                               setSelectedMessage(msg);
+                               setPreviewMode(false);
+                            }}
+                            className={cn(
+                              "p-4 rounded-lg cursor-pointer border transition-all hover:bg-white/5 min-h-[80px]",
+                              selectedMessage?.id === msg.id ? "bg-white/10 border-primary-start/30" : "bg-transparent border-transparent",
+                              msg.status === 'unread' && "border-l-2 border-l-primary-start bg-primary-start/5"
+                            )}
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className={cn("font-bold text-sm truncate pr-2", msg.status === 'unread' ? "text-white" : "text-white/70")}>
+                                {msg.name}
+                              </h4>
+                              <span className="text-[10px] text-white/30 whitespace-nowrap">
+                                {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
+                              </span>
+                            </div>
+                            <p className="text-xs text-white/50 truncate mb-2">{msg.subject}</p>
+                            <div className="flex items-center justify-between">
+                              <span className={cn(
+                                "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full",
+                                msg.status === 'done' ? "bg-green-500/20 text-green-400" :
+                                msg.status === 'replied' ? "bg-blue-500/20 text-blue-400" :
+                                msg.status === 'unread' ? "bg-primary-start/20 text-primary-start" :
+                                "bg-white/10 text-white/50"
+                              )}>
+                                {msg.status}
+                              </span>
+                            </div>
                           </div>
-                          <p className="text-xs text-white/50 truncate mb-2">{msg.subject}</p>
-                          <div className="flex items-center justify-between">
-                            <span className={cn(
-                              "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full",
-                              msg.status === 'done' ? "bg-green-500/20 text-green-400" :
-                              msg.status === 'replied' ? "bg-blue-500/20 text-blue-400" :
-                              msg.status === 'unread' ? "bg-primary-start/20 text-primary-start" :
-                              "bg-white/10 text-white/50"
-                            )}>
-                              {msg.status}
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    )}
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -394,9 +415,13 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                   selectedMessage ? "translate-x-0" : "translate-x-full lg:translate-x-0"
                 )}>
                   {selectedMessage ? (
-                    <>
-                      {/* Detail Header */}
-                      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02] shrink-0">
+                    <div className="flex flex-col h-full max-h-[calc(100vh-150px)] overflow-y-auto custom-scrollbar relative">
+                      {/* Detail Header - Sticky inside detail view? User asked to separate it. 
+                          If I put it outside the scrollable area, it's better. 
+                          But user said "Restrukturisasi container detail pesan dengan membatasi tinggi maksimal... Pisahkan area header detail pesan... agar header tetap visible saat scroll."
+                          So Header should NOT scroll.
+                      */}
+                      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-[#050505] lg:bg-transparent shrink-0 sticky top-0 z-30 backdrop-blur-md">
                         <button 
                           onClick={() => setSelectedMessage(null)}
                           className="lg:hidden flex items-center gap-2 text-white/50 hover:text-white text-sm min-h-[44px] px-2"
@@ -432,7 +457,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                         </div>
                       </div>
 
-                      <div className="flex-1 overflow-y-auto p-6 lg:p-8 overscroll-contain">
+                      <div className="flex-1 p-6 lg:p-8">
                         {/* Message Info */}
                         <div className="mb-8">
                            <h2 className="text-2xl font-bold text-white mb-2">{selectedMessage.subject}</h2>
@@ -452,8 +477,8 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                            </div>
                         </div>
 
-                        {/* Reply Section */}
-                        <div className="border-t border-white/10 pt-6 pb-20 lg:pb-0">
+                        {/* Reply Section - Sticky Bottom */}
+                        <div className="border-t border-white/10 pt-6 pb-20 lg:pb-0 sticky bottom-0 bg-[#050505] z-20">
                            <h3 className="text-sm font-bold uppercase tracking-widest text-primary-start mb-4">Reply to {selectedMessage.name}</h3>
                            
                            {/* Quick Snippets */}
@@ -470,7 +495,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                            </div>
 
                            {previewMode ? (
-                             <div className="bg-[#050505] border border-white/10 rounded-xl p-6 mb-4">
+                             <div className="bg-[#050505] border border-white/10 rounded-xl p-6 mb-4 max-h-[300px] overflow-y-auto custom-scrollbar">
                                <p className="text-white/40 text-xs mb-4 uppercase tracking-widest">Email Preview</p>
                                <div className="text-white/80 space-y-4 font-sans">
                                   <p>Halo {selectedMessage.name},</p>
@@ -487,7 +512,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                                  value={replyContent}
                                  onChange={(e) => setReplyContent(e.target.value)}
                                  placeholder="Type your reply here..."
-                                 className="w-full h-64 bg-black/30 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/20 outline-none focus:border-primary-start/50 focus:ring-1 focus:ring-primary-start/20 transition-all resize-none font-mono text-sm mb-4"
+                                 className="w-full h-40 bg-black/30 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/20 outline-none focus:border-primary-start/50 focus:ring-1 focus:ring-primary-start/20 transition-all resize-none font-mono text-sm mb-4"
                                />
                                <div className={cn(
                                  "absolute bottom-6 right-4 text-xs font-mono",
@@ -498,7 +523,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                              </div>
                            )}
 
-                           <div className="flex items-center justify-between">
+                           <div className="flex items-center justify-between pb-4">
                              <button
                                onClick={() => setPreviewMode(!previewMode)}
                                className="text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors min-h-[44px] px-2"
@@ -537,7 +562,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                            </div>
                         </div>
                       </div>
-                    </>
+                    </div>
                   ) : (
                     <div className="flex-1 flex flex-col items-center justify-center text-white/20">
                       <Mail size={48} className="mb-4 opacity-50" />

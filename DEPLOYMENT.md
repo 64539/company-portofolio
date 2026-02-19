@@ -81,6 +81,31 @@ npm run build
 
 ## 📝 Maintenance
 
+### UI Architecture & CSS Documentation
+The Admin Gate utilizes a specialized CSS architecture to handle complex scrolling behaviors across devices.
+
+**Layout Strategy:**
+- **Main Modal**: Uses `max-h-[95vh]` with `flex-col` layout to ensure it never exceeds the viewport height while remaining responsive.
+- **Independent Scrolling**: The Sidebar and Detail views scroll independently within the fixed modal container.
+
+**Key CSS Calculations (`calc()`):**
+1.  **Sidebar Height**: `max-h-[calc(100vh-200px)]`
+    -   *Rationale*: Ensures the sidebar fits within the viewport by subtracting:
+        -   ~80px (Modal Header)
+        -   ~60px (Sidebar Header)
+        -   ~60px (Margins/Padding)
+    -   This provides a safe buffer for various mobile browser chrome heights.
+
+2.  **Detail View Height**: `max-h-[calc(100vh-150px)]`
+    -   *Rationale*: Similar to sidebar but accounts for the slightly different header structure in the detail pane.
+    -   Ensures the sticky reply form at the bottom is always accessible without pushing content off-screen.
+
+**Scrollbar Customization:**
+-   Implemented via `style jsx global` in `AdminModal.tsx`.
+-   Width: `6px` (Unobtrusive but usable).
+-   Thumb: `rgba(0, 242, 254, 0.3)` (Matches Cyan theme with transparency).
+-   Behavior: Visible on hover/scroll for accessibility.
+
 -   **Logs**: Check Vercel Function Logs for server-side errors.
 -   **Redis**: Monitor your Upstash usage to ensure you stay within limits.
 -   **Resend**: Monitor email delivery rates and bounce rates in the Resend Dashboard.
