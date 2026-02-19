@@ -17,8 +17,7 @@ export const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen flex flex-col justify-center section-spacing overflow-visible">
-      {/* Gradient Blurs */}
+    <section className="relative flex flex-col justify-center section-spacing overflow-visible">
       <div 
         className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-primary-start/10 rounded-full blur-[120px] -z-10 animate-pulse will-change-[transform,opacity]" 
         style={{ pointerEvents: "none" }}

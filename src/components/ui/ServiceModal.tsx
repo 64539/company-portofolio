@@ -54,7 +54,7 @@ export const ServiceModal = ({ isOpen, onClose, service }: ServiceModalProps) =>
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 20 }}
               transition={{ type: "spring", damping: 20, stiffness: 300, duration: 0.3 }}
-              className="w-full max-w-5xl max-h-[90vh] overflow-y-auto pointer-events-auto no-scrollbar"
+              className="w-full max-w-5xl max-h-[32rem] sm:max-h-[36rem] md:max-h-[40rem] overflow-y-auto pointer-events-auto no-scrollbar"
             >
               <GlassCard className="border-white/10 shadow-2xl bg-[#050505]/90 overflow-hidden relative">
                 {/* Close Button */}

@@ -72,21 +72,20 @@ export const Navbar = () => {
         role="navigation"
         aria-label="Main Navigation"
       >
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between">
-          {/* Logo Section - Flexible & Scalable */}
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 flex items-center justify-between">
           <Link 
             href="/" 
             className="flex items-center gap-2 sm:gap-3 group shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-primary-start rounded-lg p-1"
             aria-label="Synthesize Axonova Home"
           >
-            <div className="relative flex items-center justify-center transform group-hover:scale-105 transition-transform duration-300">
+            <div className="relative flex items-center justify-center transform scale-90 xs:scale-95 sm:scale-100 group-hover:scale-105 transition-transform duration-300 origin-left">
               <img 
                 src="/logo/Logo.svg" 
                 alt="Synthesize Axonova Logo" 
                 className="w-10 h-auto sm:w-12 md:w-10 object-contain transition-all duration-300"
               />
             </div>
-            <span className="font-bold text-lg sm:text-xl md:text-xl tracking-tight uppercase hidden xs:inline-block sm:inline-block">
+            <span className="font-bold text-base sm:text-lg md:text-xl tracking-tight uppercase hidden xs:inline-block sm:inline-block">
               SYNTHESIZE <span className="text-primary-start">AXONOVA</span>
             </span>
           </Link>

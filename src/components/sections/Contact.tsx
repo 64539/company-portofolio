@@ -57,8 +57,7 @@ export const Contact = () => {
 
   return (
     <section id="contact" className="section-spacing relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-primary-end/10 rounded-full blur-[150px] -z-10 opacity-20" />
+      <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-primary-end/10 rounded-full blur-[150px] -z-10 opacity-20 pointer-events-none" />
       
       <div className="phi-container">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
