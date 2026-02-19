@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Lock, Mail, Trash2, CheckCircle, MessageCircle, RefreshCw, LogOut } from "lucide-react";
+import { X, Lock, Mail, Trash2, CheckCircle, MessageCircle, RefreshCw, LogOut, ArrowRight, ChevronRight, ArrowLeft, Send } from "lucide-react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -16,12 +16,21 @@ interface Message {
   message: string;
   status: 'unread' | 'read' | 'replied' | 'done';
   createdAt: string;
+  adminReply?: string;
 }
 
 interface AdminModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const SNIPPETS = [
+  "Terima kasih atas pesan Anda. Kami akan segera meninjau.",
+  "Bisa kami jadwalkan call untuk diskusi lebih lanjut?",
+  "Mohon informasikan budget range untuk proyek ini.",
+  "Berikut adalah portfolio kami yang relevan dengan kebutuhan Anda.",
+  "Kami siap membantu inisialisasi proyek Anda."
+];
 
 export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -30,6 +39,12 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  
+  // Reply State
+  const [replyContent, setReplyContent] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
 
   // Check session storage on mount
   useEffect(() => {
@@ -92,6 +107,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
     setIsAuthenticated(false);
     setPassword("");
     setMessages([]);
+    setSelectedMessage(null);
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -100,6 +116,9 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
 
     // Optimistic update
     setMessages(prev => prev.map(m => m.id === id ? { ...m, status: status as any } : m));
+    if (selectedMessage && selectedMessage.id === id) {
+      setSelectedMessage(prev => prev ? { ...prev, status: status as any } : null);
+    }
 
     try {
       await fetch("/api/admin/messages", {
@@ -124,6 +143,9 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
 
     // Optimistic update
     setMessages(prev => prev.filter(m => m.id !== id));
+    if (selectedMessage && selectedMessage.id === id) {
+      setSelectedMessage(null);
+    }
 
     try {
       await fetch(`/api/admin/messages?id=${id}`, {
@@ -136,18 +158,48 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
     }
   };
 
-  const getMailtoLink = (msg: Message) => {
-    const subject = `[Synthesize Axonova] Tindak Lanjut Proyek - ${msg.subject}`;
-    const body = `Halo ${msg.name},
-
-Terima kasih sudah menghubungi Axonova. Kami telah menerima pesan Anda mengenai "${msg.subject}".
-
-Tim kami telah meninjau kebutuhan Anda dan kami siap untuk mendiskusikan langkah selanjutnya.
-
-Salam hangat,
-Tim Axonova`;
+  const sendReply = async () => {
+    if (!selectedMessage || !replyContent) return;
     
-    return `mailto:${msg.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setSendingReply(true);
+    const token = sessionStorage.getItem("adminToken");
+
+    try {
+      const res = await fetch("/api/admin/send-reply", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          messageId: selectedMessage.id,
+          userEmail: selectedMessage.email,
+          userName: selectedMessage.name,
+          replyContent,
+          subject: selectedMessage.subject
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // Update local state
+        setMessages(prev => prev.map(m => 
+          m.id === selectedMessage.id ? { ...m, status: 'replied', adminReply: replyContent } : m
+        ));
+        setSelectedMessage(prev => prev ? { ...prev, status: 'replied', adminReply: replyContent } : null);
+        setReplyContent("");
+        setPreviewMode(false);
+        alert("Reply sent successfully!");
+      } else {
+        alert(data.error || "Failed to send reply");
+      }
+    } catch (error) {
+      console.error("Reply error:", error);
+      alert("Failed to send reply");
+    } finally {
+      setSendingReply(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -158,19 +210,19 @@ Tim Axonova`;
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+        className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 lg:p-8"
         onClick={onClose}
       >
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
+          initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          className="w-full max-w-4xl max-h-[90vh] overflow-hidden relative"
+          exit={{ scale: 0.95, opacity: 0 }}
+          className="w-full max-w-7xl h-[90vh] overflow-hidden relative"
           onClick={(e) => e.stopPropagation()}
         >
-          <GlassCard className="h-full flex flex-col border-primary-start/20 shadow-[0_0_50px_rgba(0,242,254,0.1)]">
+          <GlassCard className="h-full flex flex-col border-primary-start/20 shadow-[0_0_50px_rgba(0,242,254,0.1)] bg-[#050505]/95">
             {/* Header */}
-            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
+            <div className="p-4 lg:p-6 border-b border-white/10 flex items-center justify-between bg-white/5 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-3 h-3 rounded-full bg-primary-start animate-pulse" />
                 <h2 className="text-xl font-bold tracking-widest uppercase">
@@ -203,131 +255,240 @@ Tim Axonova`;
               </div>
             </div>
 
-            {/* Content */}
-            <div className="p-6 overflow-y-auto min-h-[400px] max-h-[70vh]">
-              {!isAuthenticated ? (
-                // Login Form
-                <div className="flex flex-col items-center justify-center h-full py-20">
-                  <Lock size={48} className="text-white/20 mb-8" />
-                  <form onSubmit={handleLogin} className="w-full max-w-sm space-y-6">
-                    <div>
-                      <input
-                        type="password"
-                        placeholder="Enter Access Code"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-center text-xl tracking-[0.5em] focus:border-primary-start focus:ring-1 focus:ring-primary-start outline-none transition-all placeholder:tracking-normal placeholder:text-sm"
-                        autoFocus
-                      />
-                    </div>
-                    {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full py-3 bg-white text-black font-bold uppercase tracking-widest rounded-xl hover:bg-primary-start hover:text-white transition-all disabled:opacity-50"
-                    >
-                      {loading ? "Decrypting..." : "Unlock"}
-                    </button>
-                  </form>
+            {/* Content Area */}
+            {!isAuthenticated ? (
+               // Login Form
+               <div className="flex flex-col items-center justify-center h-full">
+                 <Lock size={48} className="text-white/20 mb-8" />
+                 <form onSubmit={handleLogin} className="w-full max-w-sm space-y-6">
+                   <div>
+                     <input
+                       type="password"
+                       placeholder="Enter Access Code"
+                       value={password}
+                       onChange={(e) => setPassword(e.target.value)}
+                       className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-center text-xl tracking-[0.5em] focus:border-primary-start focus:ring-1 focus:ring-primary-start outline-none transition-all placeholder:tracking-normal placeholder:text-sm text-white"
+                       autoFocus
+                     />
+                   </div>
+                   {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+                   <button
+                     type="submit"
+                     disabled={loading}
+                     className="w-full py-3 bg-white text-black font-bold uppercase tracking-widest rounded-xl hover:bg-primary-start hover:text-white transition-all disabled:opacity-50"
+                   >
+                     {loading ? "Decrypting..." : "Unlock"}
+                   </button>
+                 </form>
+               </div>
+            ) : (
+              // Authenticated View - Split Pane
+              <div className="flex h-full overflow-hidden relative">
+                
+                {/* Left Pane: Message List */}
+                <div className={cn(
+                  "w-full lg:w-1/3 border-r border-white/5 flex flex-col transition-transform duration-300 absolute lg:relative z-10 bg-[#050505] lg:bg-transparent h-full",
+                  selectedMessage ? "-translate-x-full lg:translate-x-0" : "translate-x-0"
+                )}>
+                  <div className="p-4 border-b border-white/5">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white/50">Inbox ({messages.length})</h3>
+                  </div>
+                  <div className="overflow-y-auto flex-1 p-2 space-y-2">
+                    {messages.length === 0 ? (
+                      <div className="text-center py-20 text-white/30 text-sm">No messages yet.</div>
+                    ) : (
+                      messages.map((msg) => (
+                        <div 
+                          key={msg.id}
+                          onClick={() => {
+                             setSelectedMessage(msg);
+                             setReplyContent("");
+                             setPreviewMode(false);
+                          }}
+                          className={cn(
+                            "p-4 rounded-lg cursor-pointer border transition-all hover:bg-white/5",
+                            selectedMessage?.id === msg.id ? "bg-white/10 border-primary-start/30" : "bg-transparent border-transparent",
+                            msg.status === 'unread' && "border-l-2 border-l-primary-start bg-primary-start/5"
+                          )}
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className={cn("font-bold text-sm truncate pr-2", msg.status === 'unread' ? "text-white" : "text-white/70")}>
+                              {msg.name}
+                            </h4>
+                            <span className="text-[10px] text-white/30 whitespace-nowrap">
+                              {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
+                            </span>
+                          </div>
+                          <p className="text-xs text-white/50 truncate mb-2">{msg.subject}</p>
+                          <div className="flex items-center justify-between">
+                            <span className={cn(
+                              "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full",
+                              msg.status === 'done' ? "bg-green-500/20 text-green-400" :
+                              msg.status === 'replied' ? "bg-blue-500/20 text-blue-400" :
+                              msg.status === 'unread' ? "bg-primary-start/20 text-primary-start" :
+                              "bg-white/10 text-white/50"
+                            )}>
+                              {msg.status}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
-              ) : (
-                // Dashboard
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {messages.length === 0 ? (
-                    <div className="col-span-full text-center py-20 text-white/30">
-                      No messages intercepted yet.
-                    </div>
-                  ) : (
-                    messages.map((msg) => (
-                      <div 
-                        key={msg.id} 
-                        className={cn(
-                          "bg-white/5 border border-white/5 rounded-xl p-5 hover:border-primary-start/30 transition-all group relative overflow-hidden",
-                          msg.status === 'unread' && "bg-primary-start/5 border-primary-start/20"
-                        )}
-                      >
-                        {/* Status Indicator */}
-                        <div className="absolute top-0 right-0 p-3">
-                          <span className={cn(
-                            "text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full",
-                            msg.status === 'done' ? "bg-green-500/20 text-green-400" :
-                            msg.status === 'replied' ? "bg-blue-500/20 text-blue-400" :
-                            msg.status === 'unread' ? "bg-primary-start/20 text-primary-start" :
-                            "bg-white/10 text-white/50"
-                          )}>
-                            {msg.status}
-                          </span>
-                        </div>
 
-                        <div className="mb-4">
-                          <h3 className="font-bold text-lg text-white mb-1">{msg.name}</h3>
-                          <p className="text-xs text-white/40 font-mono">
-                            {formatDistanceToNow(new Date(msg.createdAt), { addSuffix: true })}
-                          </p>
-                        </div>
-
-                        <div className="space-y-2 mb-6">
-                          <div className="flex items-center gap-2 text-sm text-white/70">
-                            <span className="text-primary-start font-bold text-xs uppercase w-16">Subject</span>
-                            <span className="truncate">{msg.subject}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-white/70">
-                            <span className="text-primary-start font-bold text-xs uppercase w-16">Email</span>
-                            <span className="truncate">{msg.email}</span>
-                          </div>
-                          {msg.whatsapp && (
-                             <div className="flex items-center gap-2 text-sm text-white/70">
-                              <span className="text-primary-start font-bold text-xs uppercase w-16">WhatsApp</span>
-                              <span className="truncate">{msg.whatsapp}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="bg-black/30 rounded-lg p-3 text-sm text-white/80 mb-6 line-clamp-3">
-                          "{msg.message}"
-                        </div>
-
-                        {/* Actions */}
-                        <div className="grid grid-cols-2 gap-2">
-                          <a
-                            href={getMailtoLink(msg)}
-                            onClick={() => updateStatus(msg.id, 'replied')}
-                            className="flex items-center justify-center gap-2 py-2 rounded-lg bg-white/5 hover:bg-primary-start/20 text-xs font-bold uppercase tracking-wider transition-colors border border-white/5"
-                          >
-                            <Mail size={14} /> Reply
-                          </a>
-                          
-                          {msg.whatsapp && (
-                            <a
-                              href={`https://wa.me/${msg.whatsapp.replace(/\D/g, '')}`} // Strip non-digits
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center gap-2 py-2 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 text-xs font-bold uppercase tracking-wider transition-colors border border-green-500/20"
-                            >
-                              <MessageCircle size={14} /> Chat WA
-                            </a>
-                          )}
-
-                          <button
-                            onClick={() => updateStatus(msg.id, 'done')}
-                            className="flex items-center justify-center gap-2 py-2 rounded-lg bg-white/5 hover:bg-green-500/20 hover:text-green-400 text-xs font-bold uppercase tracking-wider transition-colors border border-white/5"
-                          >
-                            <CheckCircle size={14} /> Done
-                          </button>
-                          
-                          <button
-                            onClick={() => deleteMessage(msg.id)}
-                            className="flex items-center justify-center gap-2 py-2 rounded-lg bg-white/5 hover:bg-red-500/20 hover:text-red-400 text-xs font-bold uppercase tracking-wider transition-colors border border-white/5"
-                          >
-                            <Trash2 size={14} /> Delete
-                          </button>
+                {/* Right Pane: Message Detail & Reply */}
+                <div className={cn(
+                  "w-full lg:w-2/3 flex flex-col transition-transform duration-300 absolute lg:relative h-full bg-[#050505] lg:bg-transparent z-20",
+                  selectedMessage ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+                )}>
+                  {selectedMessage ? (
+                    <>
+                      {/* Detail Header */}
+                      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                        <button 
+                          onClick={() => setSelectedMessage(null)}
+                          className="lg:hidden flex items-center gap-2 text-white/50 hover:text-white text-sm"
+                        >
+                          <ArrowLeft size={16} /> Back
+                        </button>
+                        <div className="flex gap-2 ml-auto">
+                           {selectedMessage.whatsapp && (
+                             <a
+                               href={`https://wa.me/${selectedMessage.whatsapp.replace(/\D/g, '')}`}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="p-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors"
+                               title="Chat WhatsApp"
+                             >
+                               <MessageCircle size={18} />
+                             </a>
+                           )}
+                           <button 
+                              onClick={() => deleteMessage(selectedMessage.id)}
+                              className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
+                              title="Delete"
+                           >
+                             <Trash2 size={18} />
+                           </button>
+                           <button 
+                              onClick={() => updateStatus(selectedMessage.id, 'done')}
+                              className="p-2 bg-white/5 hover:bg-green-500/20 hover:text-green-400 text-white/60 rounded-lg transition-colors"
+                              title="Mark as Done"
+                           >
+                             <CheckCircle size={18} />
+                           </button>
                         </div>
                       </div>
-                    ))
+
+                      <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+                        {/* Message Info */}
+                        <div className="mb-8">
+                           <h2 className="text-2xl font-bold text-white mb-2">{selectedMessage.subject}</h2>
+                           <div className="flex flex-wrap gap-4 text-sm text-white/50 mb-6">
+                             <div className="flex items-center gap-2">
+                               <span className="w-2 h-2 rounded-full bg-primary-start" />
+                               {selectedMessage.name}
+                             </div>
+                             <span>&bull;</span>
+                             <div>{selectedMessage.email}</div>
+                             <span>&bull;</span>
+                             <div>{new Date(selectedMessage.createdAt).toLocaleString()}</div>
+                           </div>
+                           
+                           <div className="bg-white/5 p-6 rounded-xl border border-white/5 text-white/80 leading-relaxed whitespace-pre-wrap">
+                             {selectedMessage.message}
+                           </div>
+                        </div>
+
+                        {/* Reply Section */}
+                        <div className="border-t border-white/10 pt-6">
+                           <h3 className="text-sm font-bold uppercase tracking-widest text-primary-start mb-4">Reply to {selectedMessage.name}</h3>
+                           
+                           {/* Quick Snippets */}
+                           <div className="flex flex-wrap gap-2 mb-4">
+                             {SNIPPETS.map((snippet, i) => (
+                               <button
+                                 key={i}
+                                 onClick={() => setReplyContent(prev => prev + snippet + "\n")}
+                                 className="px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 text-[10px] text-white/60 hover:text-white transition-colors cursor-pointer"
+                               >
+                                 + {snippet.slice(0, 20)}...
+                               </button>
+                             ))}
+                           </div>
+
+                           {previewMode ? (
+                             <div className="bg-[#050505] border border-white/10 rounded-xl p-6 mb-4">
+                               <p className="text-white/40 text-xs mb-4 uppercase tracking-widest">Email Preview</p>
+                               <div className="text-white/80 space-y-4 font-sans">
+                                  <p>Halo {selectedMessage.name},</p>
+                                  <div dangerouslySetInnerHTML={{ __html: replyContent.replace(/\n/g, '<br>') }} />
+                                  <div className="pt-4 border-t border-white/10 text-sm text-white/50">
+                                    <p className="font-bold text-white">Admin Axonova</p>
+                                    <p>Digital Transformation Partner</p>
+                                  </div>
+                               </div>
+                             </div>
+                           ) : (
+                             <textarea
+                               value={replyContent}
+                               onChange={(e) => setReplyContent(e.target.value)}
+                               placeholder="Type your reply here..."
+                               className="w-full h-64 bg-black/30 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/20 outline-none focus:border-primary-start/50 focus:ring-1 focus:ring-primary-start/20 transition-all resize-none font-mono text-sm mb-4"
+                             />
+                           )}
+
+                           <div className="flex items-center justify-between">
+                             <button
+                               onClick={() => setPreviewMode(!previewMode)}
+                               className="text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors"
+                             >
+                               {previewMode ? "Edit Reply" : "Preview Email"}
+                             </button>
+                             
+                             <div className="flex gap-3">
+                               {previewMode && (
+                                 <button
+                                   onClick={sendReply}
+                                   disabled={sendingReply || !replyContent.trim()}
+                                   className="px-6 py-2 bg-primary-start text-black font-bold uppercase tracking-widest rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                 >
+                                   {sendingReply ? (
+                                     <>
+                                       <RefreshCw size={14} className="animate-spin" /> Sending...
+                                     </>
+                                   ) : (
+                                     <>
+                                       Send Reply <Send size={14} />
+                                     </>
+                                   )}
+                                 </button>
+                               )}
+                               {!previewMode && (
+                                 <button
+                                   onClick={() => setPreviewMode(true)}
+                                   disabled={!replyContent.trim()}
+                                   className="px-6 py-2 bg-white/10 text-white font-bold uppercase tracking-widest rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50"
+                                 >
+                                   Review
+                                 </button>
+                               )}
+                             </div>
+                           </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-white/20">
+                      <Mail size={48} className="mb-4 opacity-50" />
+                      <p className="uppercase tracking-widest text-sm">Select a message to read</p>
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
+
+              </div>
+            )}
           </GlassCard>
         </motion.div>
       </motion.div>

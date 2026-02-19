@@ -2,6 +2,7 @@ import { Resend } from 'resend';
 import { NextResponse } from 'next/server';
 import { redis } from '@/lib/redis';
 import { v4 as uuidv4 } from 'uuid';
+import { generateEmailHtml, getAutoReplyContent, getAdminNotificationContent } from '@/lib/email-templates';
 
 export async function POST(request: Request) {
   try {
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
       // We continue to send email even if Redis fails, but log it.
     }
 
-    // 2. Send Email via Resend
+    // 2. Send Emails via Resend
     // Check if API key is present
     if (!process.env.RESEND_API_KEY) {
       console.warn("RESEND_API_KEY is missing. Mocking success.");
@@ -45,23 +46,36 @@ export async function POST(request: Request) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    const emailBody = `Name: ${name}
-Email: ${email}
-WhatsApp: ${whatsapp || 'Not provided'}
-Subject: ${subject}
-
-Message:
-${message}`;
-
-    const data = await resend.emails.send({
-      from: 'Contact Form <onboarding@resend.dev>', // Use default or configured domain
-      to: ['synthesizeaxonova@gmail.com'],
-      subject: `New Contact: ${subject} from ${name}`,
-      text: emailBody,
+    // Prepare Email Content
+    const adminHtml = generateEmailHtml({
+      content: getAdminNotificationContent({ name, email, whatsapp, subject, message }),
+      isAdminNotification: true
     });
 
-    return NextResponse.json({ success: true, data });
+    const userHtml = generateEmailHtml({
+      content: getAutoReplyContent(name),
+      recipientName: name
+    });
+
+    // Send Admin Notification and Auto-Reply in parallel
+    const [adminEmail, userEmail] = await Promise.all([
+      resend.emails.send({
+        from: 'Axonova System <onboarding@resend.dev>', // Should be verified domain
+        to: ['synthesizeaxonova@gmail.com'],
+        subject: `[New Inquiry] ${subject} - ${name}`,
+        html: adminHtml,
+      }),
+      resend.emails.send({
+        from: 'Synthesize Axonova <onboarding@resend.dev>', // Should be verified domain
+        to: [email],
+        subject: `Thank you for initializing project, ${name}`,
+        html: userHtml,
+      })
+    ]);
+
+    return NextResponse.json({ success: true, adminEmail, userEmail });
   } catch (error) {
+    console.error("Email sending failed:", error);
     return NextResponse.json({ error }, { status: 500 });
   }
 }
