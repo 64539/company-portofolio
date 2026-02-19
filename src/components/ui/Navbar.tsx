@@ -7,11 +7,16 @@ import { Menu, X } from "lucide-react";
 import { NAV_LINKS } from "@/constants";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import { AdminModal } from "@/components/admin/AdminModal";
 
 export const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { isSyncing } = useStore();
+
+  // Admin Gate State
+  const [clickCount, setClickCount] = useState(0);
+  const [showAdminModal, setShowAdminModal] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,6 +25,30 @@ export const Navbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Admin Gate Logic: 7 clicks in 3 seconds
+  useEffect(() => {
+    if (clickCount === 0) return;
+
+    const timer = setTimeout(() => {
+      setClickCount(0);
+    }, 3000);
+
+    if (clickCount >= 7) {
+      setShowAdminModal(true);
+      setClickCount(0);
+      // Haptic feedback if supported
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(200);
+      }
+    }
+
+    return () => clearTimeout(timer);
+  }, [clickCount]);
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    setClickCount(prev => prev + 1);
+  };
 
   // Menu Animation Variants
   const menuVariants = {
@@ -51,6 +80,8 @@ export const Navbar = () => {
 
   return (
     <>
+      <AdminModal isOpen={showAdminModal} onClose={() => setShowAdminModal(false)} />
+
       {/* Sync Loading Bar */}
       <AnimatePresence>
         {isSyncing && (
@@ -73,9 +104,11 @@ export const Navbar = () => {
         aria-label="Main Navigation"
       >
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 flex items-center justify-between">
+          {/* Logo Section - Flexible & Scalable */}
           <Link 
             href="/" 
-            className="flex items-center gap-2 sm:gap-3 group shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-primary-start rounded-lg p-1"
+            onClick={handleLogoClick}
+            className="flex items-center gap-2 sm:gap-3 group shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-primary-start rounded-lg p-1 select-none"
             aria-label="Synthesize Axonova Home"
           >
             <div className="relative flex items-center justify-center transform scale-90 xs:scale-95 sm:scale-100 group-hover:scale-105 transition-transform duration-300 origin-left">

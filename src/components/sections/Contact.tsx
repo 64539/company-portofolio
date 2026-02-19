@@ -12,6 +12,7 @@ export const Contact = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    whatsapp: "",
     subject: "Fullstack Development",
     message: ""
   });
@@ -57,6 +58,7 @@ export const Contact = () => {
 
   return (
     <section id="contact" className="section-spacing relative overflow-hidden">
+      {/* Background decoration */}
       <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-primary-end/10 rounded-full blur-[150px] -z-10 opacity-20 pointer-events-none" />
       
       <div className="phi-container">
@@ -163,22 +165,35 @@ export const Contact = () => {
                     />
                   </div>
                 </div>
-                
-                <div className="space-y-2">
-                  <label className="text-xs font-bold tracking-widest uppercase text-white/40 ml-1">Service / Subject</label>
-                  <select 
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
-                    className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-primary-start/50 focus:ring-2 focus:ring-primary-start/10 transition-all appearance-none text-white/80"
-                  >
-                    <option className="bg-black text-white">Fullstack Development</option>
-                    <option className="bg-black text-white">UI/UX Design</option>
-                    <option className="bg-black text-white">Video Editing</option>
-                    <option className="bg-black text-white">Jasa Titip (Jastip)</option>
-                    <option className="bg-black text-white">Digital Strategy</option>
-                    <option className="bg-black text-white">Other</option>
-                  </select>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold tracking-widest uppercase text-white/40 ml-1">WhatsApp (Optional)</label>
+                    <input
+                      name="whatsapp"
+                      type="tel"
+                      placeholder="+62 812..."
+                      value={formData.whatsapp}
+                      onChange={handleChange}
+                      className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-primary-start/50 focus:ring-2 focus:ring-primary-start/10 transition-all text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold tracking-widest uppercase text-white/40 ml-1">Service / Subject</label>
+                    <select 
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleChange}
+                      className="w-full bg-white/5 border border-white/5 rounded-xl px-4 py-3 outline-none focus:border-primary-start/50 focus:ring-2 focus:ring-primary-start/10 transition-all appearance-none text-white/80"
+                    >
+                      <option className="bg-black text-white">Fullstack Development</option>
+                      <option className="bg-black text-white">UI/UX Design</option>
+                      <option className="bg-black text-white">Video Editing</option>
+                      <option className="bg-black text-white">Jasa Titip (Jastip)</option>
+                      <option className="bg-black text-white">Digital Strategy</option>
+                      <option className="bg-black text-white">Other</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="space-y-2">

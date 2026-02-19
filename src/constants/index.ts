@@ -138,27 +138,17 @@ export const CONTACT_INFO = {
 export const SOCIAL_LINKS = [
   {
     platform: "Instagram",
-    href: "https://instagram.com/synthesizeaxonova",
+    href: "https://www.instagram.com/synthesize_axonova?igsh=Y3E5aDVzZm5sNmM2",
     icon: "Instagram",
   },
   {
     platform: "WhatsApp",
-    href: "https://wa.me/yourphonenumber",
+    href: "https://wa.me/message/EF6VKFRL3TNCM1",
     icon: "MessageCircle",
   },
   {
-    platform: "Facebook",
-    href: "https://facebook.com/synthesizeaxonova",
-    icon: "Facebook",
-  },
-  {
-    platform: "TikTok",
-    href: "https://tiktok.com/@synthesizeaxonova",
-    icon: "Music2",
-  },
-  {
     platform: "Email",
-    href: "mailto:hello@synthesizeaxonova.com",
+    href: "mailto:synthesizeaxonova@gmail.com",
     icon: "Mail",
   },
 ];
