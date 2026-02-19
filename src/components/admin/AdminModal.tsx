@@ -276,13 +276,15 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 lg:p-8"
-        onClick={onClose}
+        // Disable closing on outside click as requested
+        // onClick={onClose} 
       >
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          className="w-full max-w-7xl max-h-[95vh] flex flex-col relative"
+          // Updated height for mobile keyboard awareness
+          className="w-full max-w-7xl h-[85vh] lg:h-[90vh] flex flex-col relative"
           onClick={(e) => e.stopPropagation()}
         >
           <GlassCard className="flex flex-col h-full border-primary-start/20 shadow-[0_0_50px_rgba(0,242,254,0.1)] bg-[#050505]/95 overflow-hidden">
@@ -351,18 +353,18 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                </div>
             ) : (
               // Authenticated View - Split Pane
-              <div className="flex-1 overflow-y-auto flex relative">
+              <div className="flex-1 overflow-hidden flex relative h-[calc(85vh-80px)] lg:h-[calc(90vh-80px)]">
                 
                 {/* Left Pane: Message List */}
                 <div className={cn(
-                  "w-full lg:w-1/3 border-r border-white/5 flex flex-col transition-transform duration-300 absolute lg:relative z-10 bg-[#050505] lg:bg-transparent h-full",
-                  selectedMessage ? "-translate-x-full lg:translate-x-0" : "translate-x-0"
+                  "w-full lg:w-1/3 border-r border-white/5 flex flex-col transition-all duration-300 ease-in-out absolute lg:relative z-10 bg-[#050505] lg:bg-transparent h-full",
+                  selectedMessage ? "-translate-x-full lg:translate-x-0 opacity-0 lg:opacity-100" : "translate-x-0 opacity-100"
                 )}>
                   <div className="p-4 border-b border-white/5 shrink-0">
                     <h3 className="text-xs font-bold uppercase tracking-widest text-white/50">Inbox ({messages.length})</h3>
                   </div>
                   {/* Inbox Sidebar Wrapper */}
-                  <div className="flex-1 overflow-y-auto custom-scrollbar pb-4 max-h-[calc(100vh-200px)]">
+                  <div className="flex-1 overflow-y-auto custom-scrollbar pb-4">
                     <div className="p-2 space-y-2">
                       {refreshing && messages.length === 0 ? (
                         <MessageListSkeleton />
@@ -411,17 +413,17 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
 
                 {/* Right Pane: Message Detail & Reply */}
                 <div className={cn(
-                  "w-full lg:w-2/3 flex flex-col transition-transform duration-300 absolute lg:relative h-full bg-[#050505] lg:bg-transparent z-20",
-                  selectedMessage ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+                  "w-full lg:w-2/3 flex flex-col transition-all duration-300 ease-in-out absolute lg:relative h-full bg-[#050505] lg:bg-transparent z-20",
+                  selectedMessage ? "translate-x-0 opacity-100" : "translate-x-full lg:translate-x-0 opacity-0 lg:opacity-100"
                 )}>
                   {selectedMessage ? (
-                    <div className="flex flex-col h-full max-h-[calc(100vh-150px)] overflow-y-auto custom-scrollbar relative">
+                    <div className="flex flex-col h-full overflow-hidden relative">
                       {/* Detail Header - Sticky inside detail view? User asked to separate it. 
                           If I put it outside the scrollable area, it's better. 
                           But user said "Restrukturisasi container detail pesan dengan membatasi tinggi maksimal... Pisahkan area header detail pesan... agar header tetap visible saat scroll."
                           So Header should NOT scroll.
                       */}
-                      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-[#050505] lg:bg-transparent shrink-0 sticky top-0 z-30 backdrop-blur-md">
+                      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-[#050505] lg:bg-transparent shrink-0 z-30 backdrop-blur-md">
                         <button 
                           onClick={() => setSelectedMessage(null)}
                           className="lg:hidden flex items-center gap-2 text-white/50 hover:text-white text-sm min-h-[44px] px-2"
@@ -457,7 +459,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                         </div>
                       </div>
 
-                      <div className="flex-1 p-6 lg:p-8">
+                      <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8 pb-20">
                         {/* Message Info */}
                         <div className="mb-8">
                            <h2 className="text-2xl font-bold text-white mb-2">{selectedMessage.subject}</h2>
@@ -477,8 +479,8 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                            </div>
                         </div>
 
-                        {/* Reply Section - Sticky Bottom */}
-                        <div className="border-t border-white/10 pt-6 pb-20 lg:pb-0 sticky bottom-0 bg-[#050505] z-20">
+                        {/* Reply Section */}
+                        <div className="border-t border-white/10 pt-6">
                            <h3 className="text-sm font-bold uppercase tracking-widest text-primary-start mb-4">Reply to {selectedMessage.name}</h3>
                            
                            {/* Quick Snippets */}
@@ -495,7 +497,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                            </div>
 
                            {previewMode ? (
-                             <div className="bg-[#050505] border border-white/10 rounded-xl p-6 mb-4 max-h-[300px] overflow-y-auto custom-scrollbar">
+                             <div className="bg-[#050505] border border-white/10 rounded-xl p-6 mb-4 min-h-[200px]">
                                <p className="text-white/40 text-xs mb-4 uppercase tracking-widest">Email Preview</p>
                                <div className="text-white/80 space-y-4 font-sans">
                                   <p>Halo {selectedMessage.name},</p>
@@ -512,7 +514,7 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                                  value={replyContent}
                                  onChange={(e) => setReplyContent(e.target.value)}
                                  placeholder="Type your reply here..."
-                                 className="w-full h-40 bg-black/30 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/20 outline-none focus:border-primary-start/50 focus:ring-1 focus:ring-primary-start/20 transition-all resize-none font-mono text-sm mb-4"
+                                 className="w-full h-64 bg-black/30 border border-white/10 rounded-xl p-4 text-white placeholder:text-white/20 outline-none focus:border-primary-start/50 focus:ring-1 focus:ring-primary-start/20 transition-all resize-none font-mono text-sm mb-4"
                                />
                                <div className={cn(
                                  "absolute bottom-6 right-4 text-xs font-mono",
@@ -522,46 +524,47 @@ export const AdminModal = ({ isOpen, onClose }: AdminModalProps) => {
                                </div>
                              </div>
                            )}
-
-                           <div className="flex items-center justify-between pb-4">
-                             <button
-                               onClick={() => setPreviewMode(!previewMode)}
-                               className="text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors min-h-[44px] px-2"
-                             >
-                               {previewMode ? "Edit Reply" : "Preview Email"}
-                             </button>
-                             
-                             <div className="flex gap-3">
-                               {previewMode && (
-                                 <button
-                                   onClick={sendReply}
-                                   disabled={sendingReply || !replyContent.trim() || replyContent.length > 5000 || replyContent.length < 10}
-                                   className="px-6 py-2 bg-primary-start text-black font-bold uppercase tracking-widest rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-h-[44px]"
-                                 >
-                                   {sendingReply ? (
-                                     <>
-                                       <RefreshCw size={14} className="animate-spin" /> Sending...
-                                     </>
-                                   ) : (
-                                     <>
-                                       Send Reply <Send size={14} />
-                                     </>
-                                   )}
-                                 </button>
-                               )}
-                               {!previewMode && (
-                                 <button
-                                   onClick={() => setPreviewMode(true)}
-                                   disabled={!replyContent.trim()}
-                                   className="px-6 py-2 bg-white/10 text-white font-bold uppercase tracking-widest rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 min-h-[44px]"
-                                 >
-                                   Review
-                                 </button>
-                               )}
-                             </div>
-                           </div>
                         </div>
                       </div>
+
+                      {/* Sticky Action Bar */}
+                      <div className="flex-none sticky bottom-0 bg-[#050505] border-t border-white/10 p-4 z-50 flex items-center justify-between">
+                         <button
+                           onClick={() => setPreviewMode(!previewMode)}
+                           className="text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors min-h-[44px] px-2"
+                         >
+                           {previewMode ? "Edit Reply" : "Preview Email"}
+                         </button>
+                         
+                         <div className="flex gap-3">
+                           {previewMode && (
+                             <button
+                               onClick={sendReply}
+                               disabled={sendingReply || !replyContent.trim() || replyContent.length > 5000 || replyContent.length < 10}
+                               className="px-6 py-2 bg-primary-start text-black font-bold uppercase tracking-widest rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-h-[44px]"
+                             >
+                               {sendingReply ? (
+                                 <>
+                                   <RefreshCw size={14} className="animate-spin" /> Sending...
+                                 </>
+                               ) : (
+                                 <>
+                                   Send Reply <Send size={14} />
+                                 </>
+                               )}
+                             </button>
+                           )}
+                           {!previewMode && (
+                             <button
+                               onClick={() => setPreviewMode(true)}
+                               disabled={!replyContent.trim()}
+                               className="px-6 py-2 bg-white/10 text-white font-bold uppercase tracking-widest rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 min-h-[44px]"
+                             >
+                               Review
+                             </button>
+                           )}
+                         </div>
+                       </div>
                     </div>
                   ) : (
                     <div className="flex-1 flex flex-col items-center justify-center text-white/20">
